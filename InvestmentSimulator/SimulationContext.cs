@@ -1,25 +1,15 @@
 ﻿using System;
 using System.CommandLine;
 using System.CommandLine.Binding;
-using System.CommandLine.Builder;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using J4JSoftware.Logging;
 
-namespace InvestmentSimulator
+namespace J4JSoftware.InvestmentSimulator
 {
     public class SimulationContext
     {
-        private class RawArgs
-        {
-            public int Y { get; set; }
-            public int I { get; set; }
-            public int S { get; set; }
-            public double R { get; set; }
-            public double D { get; set; }
-        }
-
-        private readonly IJ4JLogger<SimulationContext> _logger;
+        private readonly IJ4JLogger _logger;
 
         private int _years = 1;
         private int _investments = 1;
@@ -27,14 +17,10 @@ namespace InvestmentSimulator
         private double _maxReturn = 0.2;
         private double _maxStdDevReturn = 0.2;
 
-        // should only be used by System.CommandLine
-        public SimulationContext()
+        public SimulationContext( IJ4JLoggerFactory loggerFactory )
         {
-        }
-
-        public SimulationContext( IJ4JLogger<SimulationContext> logger )
-        {
-            _logger = logger ?? throw new NullReferenceException( nameof(logger) );
+            _logger = loggerFactory?.CreateLogger( typeof(SimulationContext) ) ??
+                      throw new NullReferenceException( nameof(loggerFactory) );
         }
 
         public int Years
@@ -143,34 +129,38 @@ namespace InvestmentSimulator
                     : $"'maxStdDev' must be > 0 (default is {r.Option.GetDefaultValue()})" );
             rootCommand.AddOption( maxStdDev );
 
-            //var binder = new ModelBinder<SimulationContext>();
+            rootCommand.Handler = new ObjectBinder<SimulationContext>( this );
 
-            //binder.BindMemberFromValue(sc=>sc.Investments, investments);
-            //binder.BindMemberFromValue(sc=>sc.MaxAnnualInvestmentReturn, maxReturn);
-            //binder.BindMemberFromValue(sc=>sc.MaxStdDevAnnualInvestmentReturn, maxStdDev);
-            //binder.BindMemberFromValue(sc=>sc.Simulations, simulations);
-            //binder.BindMemberFromValue(sc=>sc.Years, years);
-
-            //var bindingContext = new BindingContext( rootCommand.Parse( args ) );
-
-            //var instance = (SimulationContext) binder.CreateInstance( bindingContext );
-
-            var parsed = false;
-
-            rootCommand.Handler = CommandHandler.Create<RawArgs>( raw =>
+            rootCommand.UseObjectBinding( ( cmdOptions, cmdArgs ) =>
             {
-                Years = raw.Y;
-                Investments = raw.I;
-                Simulations = raw.S;
-                MaxAnnualInvestmentReturn = raw.R;
-                MaxStdDevAnnualInvestmentReturn = raw.D;
+                var retVal = new ModelBinder<SimulationContext>();
 
-                parsed = true;
+                retVal.BindMemberFromValue( sc =>
+                        sc.Investments,
+                    cmdOptions.FindFirstMatch( "i" ) );
+
+                retVal.BindMemberFromValue( sc =>
+                        sc.MaxAnnualInvestmentReturn,
+                    cmdOptions.FindFirstMatch( "r" ) );
+
+                retVal.BindMemberFromValue( sc =>
+                        sc.MaxStdDevAnnualInvestmentReturn,
+                    cmdOptions.FindFirstMatch( "d" ) );
+
+                retVal.BindMemberFromValue( sc =>
+                        sc.Simulations,
+                    cmdOptions.FindFirstMatch( "s" ) );
+
+                retVal.BindMemberFromValue( sc =>
+                        sc.Years,
+                    cmdOptions.FindFirstMatch( "y" ) );
+
+                return retVal;
             } );
 
-            return rootCommand.Invoke( args ) == 0 && parsed;
+            var invocationResult = rootCommand.Invoke( args );
 
-            //return true;
+            return invocationResult == 0;
         }
     }
 }

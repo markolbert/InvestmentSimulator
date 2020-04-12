@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using J4JSoftware.Logging;
-using Newtonsoft.Json;
-using Serilog;
 using Serilog.Events;
 
-namespace InvestmentSimulator
+namespace J4JSoftware.InvestmentSimulator
 {
     internal static class ServiceProvider
     {
@@ -43,12 +39,14 @@ namespace InvestmentSimulator
             } )
                 .SingleInstance();
 
-            builder.RegisterGeneric( typeof( J4JLogger<> ) )
-                .As( typeof( IJ4JLogger<> ) )
+            builder.RegisterType<J4JLoggerFactory>()
+                .As<IJ4JLoggerFactory>()
                 .SingleInstance();
 
             builder.RegisterType<SimulationContext>()
-                .UsingConstructor( typeof(IJ4JLogger<SimulationContext>) )
+                .AsSelf();
+
+            builder.RegisterType<Simulator>()
                 .AsSelf();
 
             return new AutofacServiceProvider( builder.Build() );

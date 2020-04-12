@@ -1,0 +1,8 @@
+Notes
+
+Symbol AddAlias on RootCommand creation: Name property and alias appear to be competing for identifying Symbol. Why?
+
+Option in ctor why is an Argument being created to wrap getDefaultValue? Why not just store getDefaultValue and 
+assign it to Argument later, in case Argument gets created explicitly by the user?
+
+What is if( x is {} y)?

@@ -1,23 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using J4JSoftware.Logging;
 using MathNet.Numerics.Distributions;
 
-namespace InvestmentSimulator
+namespace J4JSoftware.InvestmentSimulator
 {
     public class Simulator
     {
-        private readonly IJ4JLogger<Simulator> _logger;
+        private readonly IJ4JLogger _logger;
 
         private SimulationContext _context;
         private double[,,] _values;
         private InverseGaussian[] _invGaussians;
 
-        public Simulator( IJ4JLogger<Simulator> logger )
+        public Simulator( IJ4JLoggerFactory loggerFactory )
         {
-            _logger = logger ?? throw new NullReferenceException( nameof(logger) );
+            _logger = loggerFactory?.CreateLogger( typeof(Simulator) ) ??
+                      throw new NullReferenceException( nameof(loggerFactory) );
         }
 
         public double[,,] Values
@@ -107,7 +106,7 @@ namespace InvestmentSimulator
                             retVal += delta * delta;
                         }
 
-                        return Math.Sqrt( retVal / _context.Investments );
+                        return Math.Sqrt( retVal / _context.Investments ) - 1.0;
                     } )
                     .ToArray();
             }
@@ -130,7 +129,7 @@ namespace InvestmentSimulator
                     retVal *= ( 1 + mean );
                 }
 
-                return retVal - 1;
+                return Math.Pow( retVal, 1.0 / _context.Years ) - 1.0;
             }
         }
 
@@ -160,14 +159,14 @@ namespace InvestmentSimulator
                             portfolioReturn += _values[ year, inv, sim ];
                         }
 
-                        simReturn *= ( 1 + portfolioReturn / _context.Investments );
+                        simReturn *= ( 1.0 + portfolioReturn / _context.Investments );
                     }
 
-                    var delta = ( simReturn - 1 ) - overallMean;
+                    var delta = ( simReturn - 1.0 ) - overallMean;
                     retVal += delta * delta;
                 }
 
-                return Math.Sqrt( retVal / _context.Simulations );
+                return Math.Sqrt( retVal / _context.Simulations ) - 1.0;
             }
         }
 
@@ -200,10 +199,10 @@ namespace InvestmentSimulator
                 var sim = 0;
 
                 _logger.Information(
-                    $"Generating {_context.Simulations:n0} simulations of {_context.Years:n0} years of returns for investment #{inv:n0}" );
+                    $"Generating {_context.Simulations:n0} simulations of {_context.Years:n0} years of returns for investment #{(inv + 1):n0}" );
 
                 foreach( var sample in _invGaussians[ inv ].Samples()
-                    .Take( _context.Years * _context.Investments ) )
+                    .Take( _context.Years * _context.Simulations ) )
                 {
                     _values[ year, inv, sim ] = sample;
 
@@ -212,6 +211,7 @@ namespace InvestmentSimulator
                     if( sim < _context.Simulations ) 
                         continue;
 
+                    sim = 0;
                     year++;
 
                     if( year >= _context.Years )

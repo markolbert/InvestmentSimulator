@@ -1,21 +1,26 @@
 ﻿using System;
+using System.IO;
 using Alba.CsConsoleFormat;
 using J4JSoftware.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using static System.ConsoleColor;
 
-namespace InvestmentSimulator
+namespace J4JSoftware.InvestmentSimulator
 {
     class Program
     {
         private static readonly LineThickness _hdrThickness = new LineThickness( LineWidth.Single, LineWidth.Single );
 
-        private static IJ4JLogger<Program> _logger;
+        private static IJ4JLogger _logger;
         private static SimulationContext _context;
+        private static Simulator _simulator;
 
         static void Main( string[] args )
         {
-            _logger = ServiceProvider.Instance.GetRequiredService<IJ4JLogger<Program>>();
+            var loggerFactory = ServiceProvider.Instance.GetRequiredService<IJ4JLoggerFactory>();
+            _logger = loggerFactory.CreateLogger( typeof(Program) );
 
             _context = ServiceProvider.Instance.GetRequiredService<SimulationContext>();
             
@@ -28,12 +33,21 @@ namespace InvestmentSimulator
             OutputAssumptions();
 
             PressAnyKey("Press any key to run simulations");
+
+            _simulator = ServiceProvider.Instance.GetRequiredService<Simulator>();
+            _simulator.Run( _context );
+
+            var junk = _simulator.OverallMeanReturn;
+            junk = _simulator.OverallStandardDeviation;
+            var crap = _simulator.PortfolioReturn;
+            crap = _simulator.PortfolioStandardDeviation;
         }
 
         private static void PressAnyKey( string prompt = "Press any key to continue" )
         {
             Console.Write($"\n{prompt}: ");
             Console.ReadKey(false);
+            Console.WriteLine("\n");
         }
 
         private static void OutputAssumptions()
@@ -63,6 +77,25 @@ namespace InvestmentSimulator
                 } );
 
             ConsoleRenderer.RenderDocument( doc );
+        }
+
+        private static bool OutputToExcel( )
+        {
+            var workbook = ServiceProvider.Instance.GetRequiredService<ExcelExporter>();
+
+            if( !workbook.Open() )
+                return false;
+
+            workbook.AddWorksheet( "assumptions" );
+
+            OutputAssumptionsToExcel( workbook.ActiveWorksheet );
+
+            return true;
+        }
+
+        private static void OutputAssumptionsToExcel( ExcelSheet sheet )
+        {
+
         }
     }
 }

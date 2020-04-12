@@ -3,6 +3,7 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>J4JSoftware.InvestmentSimulator</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,10 +11,13 @@
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
     <PackageReference Include="MathNet.Numerics" Version="4.9.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta1.20158.1" />
+    <PackageReference Include="NPOI" Version="2.4.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\command-line-api\src\System.CommandLine\System.CommandLine.csproj" />
+    <ProjectReference Include="..\..\J4JLogging\ConsoleChannel\ConsoleChannel.csproj" />
+    <ProjectReference Include="..\..\J4JLogging\FileChannel\FileChannel.csproj" />
     <ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />
   </ItemGroup>
 

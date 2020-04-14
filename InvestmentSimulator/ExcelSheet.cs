@@ -9,6 +9,7 @@ namespace J4JSoftware.InvestmentSimulator
     public class ExcelSheet
     {
         private readonly IJ4JLogger _logger;
+        private readonly IJ4JLoggerFactory _loggerFactory;
         private readonly List<IRow> _rows = new List<IRow>();
         private readonly List<ICell> _cells = new List<ICell>();
 
@@ -17,8 +18,8 @@ namespace J4JSoftware.InvestmentSimulator
             IJ4JLoggerFactory loggerFactory
         )
         {
-            _logger = loggerFactory?.CreateLogger( typeof(ExcelSheet) ) ??
-                      throw new NullReferenceException( nameof(loggerFactory) );
+            _loggerFactory = loggerFactory ?? throw new NullReferenceException( nameof(loggerFactory) );
+            _logger = _loggerFactory.CreateLogger( typeof(ExcelSheet) );
 
             Sheet = sheet ?? throw new NullReferenceException( nameof(sheet) );
         }

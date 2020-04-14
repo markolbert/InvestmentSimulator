@@ -74,8 +74,10 @@ namespace J4JSoftware.InvestmentSimulator
                 if( string.IsNullOrEmpty( fileName ) )
                     break;
 
-                fileName += ".xlsx";
-                var path = Path.Combine( Environment.CurrentDirectory, fileName );
+                var modifiedPath = Path.GetFileNameWithoutExtension( fileName );
+                modifiedPath += ".xlsx";
+
+                var path = Path.Combine( Environment.CurrentDirectory, modifiedPath );
 
                 try
                 {

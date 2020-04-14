@@ -1,10 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Alba.CsConsoleFormat;
 using J4JSoftware.Logging;
 using MathNet.Numerics.Distributions;
+using NPOI.OpenXmlFormats.Dml;
 
 namespace J4JSoftware.InvestmentSimulator
 {
+    public struct SimulationResult
+    {
+        public int Simulation { get; set; }
+        public int Investment { get; set; }
+        public int Year { get; set; }
+        public double RateOfReturn { get; set; }
+    }
+
     public class Simulator
     {
         private readonly IJ4JLogger _logger;
@@ -19,17 +30,65 @@ namespace J4JSoftware.InvestmentSimulator
                       throw new NullReferenceException( nameof(loggerFactory) );
         }
 
+        public SimulationContext Context
+        {
+            get
+            {
+                if( _context == null )
+                {
+                    _logger.Error( $"{nameof(Context)} is undefined" );
+                    return new SimulationContext( null );
+                }
+
+                return _context;
+            }
+
+            set => _context = value;
+        }
+
         public double[,,] Values
         {
             get
             {
-                if( _values == null )
+                if( _values != null ) 
+                    return _values;
+                
+                _logger.Error( $"{nameof(Values)} is undefined" );
+                
+                return new double[0,0,0];
+            }
+        }
+
+        public List<SimulationResult> Results
+        {
+            get
+            {
+                var retVal = new List<SimulationResult>();
+
+                if (_values == null)
                 {
-                    _logger.Error( $"{nameof(Values)} is undefined" );
-                    return new double[0, 0, 0];
+                    _logger.Error($"{nameof(Values)} is undefined");
+                    return retVal;
                 }
 
-                return _values;
+                for( var sim = 0; sim < _context.Simulations; sim++ )
+                {
+                    for( var inv = 0; inv < _context.Investments; inv++ )
+                    {
+                        for( var year = 0; year < _context.Years; year++ )
+                        {
+                            retVal.Add(new SimulationResult()
+                            {
+                                Investment = inv,
+                                RateOfReturn = _values[year, inv, sim],
+                                Simulation = sim,
+                                Year = year
+                            });
+                        }
+                    }
+                }
+
+                return retVal;
             }
         }
 

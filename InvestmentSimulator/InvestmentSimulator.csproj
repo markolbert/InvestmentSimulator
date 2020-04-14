@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="ServiceProvider.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Alba.CsConsoleFormat" Version="1.0.0" />
     <PackageReference Include="Autofac" Version="5.1.2" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="6.0.0" />
@@ -16,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\command-line-api\src\System.CommandLine\System.CommandLine.csproj" />
+    <ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
     <ProjectReference Include="..\..\J4JLogging\ConsoleChannel\ConsoleChannel.csproj" />
     <ProjectReference Include="..\..\J4JLogging\FileChannel\FileChannel.csproj" />
     <ProjectReference Include="..\..\J4JLogging\J4JLogging\J4JLogging.csproj" />

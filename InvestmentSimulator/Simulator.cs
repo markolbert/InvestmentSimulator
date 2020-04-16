@@ -1,10 +1,9 @@
-﻿using System;
+﻿using J4JSoftware.Logging;
+using MathNet.Numerics.Distributions;
+using MathNet.Numerics.Statistics;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using Alba.CsConsoleFormat;
-using J4JSoftware.Logging;
-using MathNet.Numerics.Distributions;
-using NPOI.OpenXmlFormats.Dml;
 
 namespace J4JSoftware.InvestmentSimulator
 {
@@ -20,267 +19,207 @@ namespace J4JSoftware.InvestmentSimulator
     {
         private readonly IJ4JLogger _logger;
 
-        private SimulationContext _context;
-        private double[,,] _values;
-        private InverseGaussian[] _invGaussians;
-
         public Simulator( IJ4JLoggerFactory loggerFactory )
         {
             _logger = loggerFactory?.CreateLogger( typeof(Simulator) ) ??
                       throw new NullReferenceException( nameof(loggerFactory) );
         }
 
-        public SimulationContext Context
-        {
-            get
-            {
-                if( _context == null )
-                {
-                    _logger.Error( $"{nameof(Context)} is undefined" );
-                    return new SimulationContext( null );
-                }
+        public bool IsValid { get; private set; }
+        public SimulationContext Context { get; private set; }
+        public double[,,] Values { get; private set; }
+        public List<SimulationResult> Results { get; private set; }
+        public InverseGaussian[] InverseInvestmentGaussians { get; private set; }
+        public double[] PortfolioReturnsByYear { get; private set; }
+        public double[] PortfolioStandardDeviationsByYear { get; private set; }
+        public double[] SimulationGeometricReturns { get; private set; }
+        public double OverallGeometricReturnMean => SimulationGeometricReturns?.Average() ?? -1.0;
+        public double OverallGeometricReturnStandardDeviation => SimulationGeometricReturns == null
+            ? -1.0
+            : ArrayStatistics.PopulationStandardDeviation( SimulationGeometricReturns );
 
-                return _context;
-            }
-
-            set => _context = value;
-        }
-
-        public double[,,] Values
-        {
-            get
-            {
-                if( _values != null ) 
-                    return _values;
-                
-                _logger.Error( $"{nameof(Values)} is undefined" );
-                
-                return new double[0,0,0];
-            }
-        }
-
-        public List<SimulationResult> Results
-        {
-            get
-            {
-                var retVal = new List<SimulationResult>();
-
-                if (_values == null)
-                {
-                    _logger.Error($"{nameof(Values)} is undefined");
-                    return retVal;
-                }
-
-                for( var sim = 0; sim < _context.Simulations; sim++ )
-                {
-                    for( var inv = 0; inv < _context.Investments; inv++ )
-                    {
-                        for( var year = 0; year < _context.Years; year++ )
-                        {
-                            retVal.Add(new SimulationResult()
-                            {
-                                Investment = inv,
-                                RateOfReturn = _values[year, inv, sim],
-                                Simulation = sim,
-                                Year = year
-                            });
-                        }
-                    }
-                }
-
-                return retVal;
-            }
-        }
-
-        public InverseGaussian[] InverseInvestmentGaussians
-        {
-            get
-            {
-                if( _context == null )
-                {
-                    _logger.Error( $"{nameof(InverseInvestmentGaussians)} is undefined" );
-                    return new InverseGaussian[0];
-                }
-
-                return _invGaussians;
-            }
-        }
-
-        public double[] PortfolioReturn
-        {
-            get
-            {
-                if( _values == null || _context == null )
-                {
-                    _logger.Error( $"{nameof( PortfolioReturn )} undefined" );
-                    return new double[0];
-                }
-
-                return Enumerable.Range( 0, _context.Years )
-                    .Select( y =>
-                    {
-                        var retVal = 0.0;
-
-                        for( var inv = 0; inv < _context.Investments; inv++ )
-                        {
-                            for( var sim = 0; sim < _context.Simulations; sim++ )
-                            {
-                                retVal += _values[ y, inv, sim ];
-                            }
-                        }
-
-                        return retVal / (_context.Investments * _context.Simulations);
-                    } )
-                    .ToArray();
-            }
-        }
-
-        public double[] PortfolioStandardDeviation
-        {
-            get
-            {
-                if( _values == null || _context == null )
-                {
-                    _logger.Error( $"{nameof( PortfolioStandardDeviation )} undefined" );
-                    return new double[ 0 ];
-                }
-
-                var means = PortfolioReturn;
-
-                return Enumerable.Range( 0, _context.Years )
-                    .Select( y =>
-                    {
-                        var retVal = 0.0;
-
-                        for( var inv = 0; inv < _context.Investments; inv++ )
-                        {
-                            var simAvg = 0.0;
-
-                            for( var sim = 0; sim < _context.Simulations; sim++ )
-                            {
-                                simAvg += _values[ y, inv, sim ];
-                            }
-
-                            var delta = ( simAvg - means[ y ] ) ;
-                            retVal += delta * delta;
-                        }
-
-                        return Math.Sqrt( retVal / _context.Investments ) - 1.0;
-                    } )
-                    .ToArray();
-            }
-        }
-
-        public double OverallMeanReturn
-        {
-            get
-            {
-                if( _values == null || _context == null )
-                {
-                    _logger.Error( $"{nameof( OverallMeanReturn )} undefined" );
-                    return 0.0;
-                }
-
-                var retVal = 1.0;
-
-                foreach( var mean in PortfolioReturn )
-                {
-                    retVal *= ( 1 + mean );
-                }
-
-                return Math.Pow( retVal, 1.0 / _context.Years ) - 1.0;
-            }
-        }
-
-        public double OverallStandardDeviation
-        {
-            get
-            {
-                if( _values == null || _context == null )
-                {
-                    _logger.Error( $"{nameof( OverallStandardDeviation )} undefined" );
-                    return 0.0;
-                }
-
-                var retVal = 0.0;
-                var overallMean = OverallMeanReturn;
-
-                for( var sim = 0; sim < _context.Simulations; sim++ )
-                {
-                    var simReturn = 1.0;
-
-                    for( var year = 0; year < _context.Years; year++ )
-                    {
-                        var portfolioReturn = 0.0;
-
-                        for( var inv = 0; inv < _context.Investments; inv++ )
-                        {
-                            portfolioReturn += _values[ year, inv, sim ];
-                        }
-
-                        simReturn *= ( 1.0 + portfolioReturn / _context.Investments );
-                    }
-
-                    var delta = ( simReturn - 1.0 ) - overallMean;
-                    retVal += delta * delta;
-                }
-
-                return Math.Sqrt( retVal / _context.Simulations ) - 1.0;
-            }
-        }
+        public double[,] RawGeometricReturns { get; private set; }
 
         public bool Run( SimulationContext context )
         {
+            IsValid = false;
+
             if( context == null )
             {
                 _logger.Error( $"Undefined {nameof(context)}" );
                 return false;
             }
 
-            _context = context;
-            _values = new double[_context.Years, _context.Investments, _context.Simulations];
+            Context = context;
+            Values = new double[Context.Years, Context.Investments, Context.Simulations];
 
-            _invGaussians = new InverseGaussian[_context.Investments];
+            InverseInvestmentGaussians = new InverseGaussian[Context.Investments];
 
             var random = new Random();
 
-            for( var inv = 0; inv < _context.Investments; inv++ )
+            for( var inv = 0; inv < Context.Investments; inv++ )
             {
-                _invGaussians[ inv ] = new InverseGaussian(
-                    _context.MaxAnnualInvestmentReturn * random.NextDouble(),
-                    _context.MaxStdDevAnnualInvestmentReturn * random.NextDouble()
+                InverseInvestmentGaussians[ inv ] = new InverseGaussian(
+                    Context.MaxAnnualInvestmentReturn * random.NextDouble(),
+                    Context.MaxStdDevAnnualInvestmentReturn * random.NextDouble()
                 );
             }
 
-            for( var inv = 0; inv < _context.Investments; inv++ )
+            CalculateSimulations();
+            SummarizeRawGeometricReturns();
+            SummarizePortfolioReturnsByYear();
+            CalculatePortfolioReturnStandardDeviationsByYear();
+            CalculateGeometricMeanReturnsBySimulation();
+
+            IsValid = true;
+
+            return true;
+        }
+
+        private void CalculateSimulations()
+        {
+            Console.Write("Calculating simulations...");
+
+            Results = new List<SimulationResult>();
+
+            for( var inv = 0; inv < Context.Investments; inv++ )
             {
                 var year = 0;
                 var sim = 0;
 
                 _logger.Information(
-                    $"Generating {_context.Simulations:n0} simulations of {_context.Years:n0} years of returns for investment #{(inv + 1):n0}" );
+                    $"Generating {Context.Simulations:n0} simulations of {Context.Years:n0} years of returns for investment #{( inv + 1 ):n0}" );
 
-                foreach( var sample in _invGaussians[ inv ].Samples()
-                    .Take( _context.Years * _context.Simulations ) )
+                foreach( var sample in InverseInvestmentGaussians[ inv ].Samples()
+                    .Take( Context.Years * Context.Simulations ) )
                 {
-                    _values[ year, inv, sim ] = sample;
+                    Values[ year, inv, sim ] = sample;
+
+                    Results.Add( new SimulationResult
+                        { Investment = inv, RateOfReturn = sample, Simulation = sim, Year = year } );
 
                     sim++;
 
-                    if( sim < _context.Simulations ) 
+                    if( sim < Context.Simulations )
                         continue;
 
                     sim = 0;
                     year++;
 
-                    if( year >= _context.Years )
+                    if( year >= Context.Years )
                         break;
                 }
             }
 
-            _logger.Information( "Simulations completed" );
+            Console.WriteLine("done.");
+        }
 
-            return true;
+        private void SummarizeRawGeometricReturns()
+        {
+            Console.Write("Summarizing raw geometric returns by simulation and investment...");
+
+            RawGeometricReturns = new double[Context.Simulations, Context.Investments];
+
+            for (var sim = 0; sim < Context.Simulations; sim++)
+            {
+                for (var inv = 0; inv < Context.Investments; inv++)
+                {
+                    RawGeometricReturns[sim, inv] = 1.0;
+
+                    for (var year = 0; year < Context.Years; year++)
+                    {
+                        RawGeometricReturns[sim, inv] *= (1 + Values[year, inv, sim]);
+                    }
+                }
+            }
+
+            Console.WriteLine("done.");
+        }
+
+        private void SummarizePortfolioReturnsByYear()
+        {
+            Console.Write("Summarizing portfolio returns by year...");
+
+            PortfolioReturnsByYear = new double[Context.Years];
+            var invSim = Context.Investments * Context.Simulations;
+
+            for (var year = 0; year < Context.Years; year++)
+            {
+                var cumlYearReturn = 0.0;
+
+                for (var inv = 0; inv < Context.Investments; inv++)
+                {
+                    for (var sim = 0; sim < Context.Simulations; sim++)
+                    {
+                        cumlYearReturn += Values[year, inv, sim];
+                    }
+                }
+
+                PortfolioReturnsByYear[year] = cumlYearReturn / invSim;
+            }
+
+            Console.WriteLine("done.");
+        }
+
+        private void CalculatePortfolioReturnStandardDeviationsByYear()
+        {
+            Console.Write("Calculating standard deviations of portfolio returns by year...");
+
+            PortfolioStandardDeviationsByYear = new double[Context.Years];
+            var invSim = Context.Investments * Context.Simulations;
+
+            for (var year = 0; year < Context.Years; year++)
+            {
+                var cumlInvVariance = 0.0;
+
+                for (var inv = 0; inv < Context.Investments; inv++)
+                {
+                    for (var sim = 0; sim < Context.Simulations; sim++)
+                    {
+                        var deltaFromAvg = Values[year, inv, sim] - PortfolioReturnsByYear[year];
+
+                        cumlInvVariance += deltaFromAvg * deltaFromAvg;
+                    }
+                }
+
+                PortfolioStandardDeviationsByYear[year] = Math.Sqrt(cumlInvVariance / invSim);
+            }
+
+            Console.WriteLine("done.");
+        }
+
+        private void CalculateGeometricMeanReturnsBySimulation()
+        {
+            Console.Write("Calculating standard deviations of portfolio returns by year...");
+
+            SimulationGeometricReturns = new double[Context.Simulations];
+
+            for (var sim = 0; sim < Context.Simulations; sim++)
+            {
+                SimulationGeometricReturns[sim] = 0.0;
+
+                for (var inv = 0; inv < Context.Investments; inv++)
+                {
+                    var invTotalReturn = 1.0;
+
+                    for (var year = 0; year < Context.Years; year++)
+                    {
+                        invTotalReturn *= (1 + Values[year, inv, sim]);
+                    }
+
+                    SimulationGeometricReturns[sim] += invTotalReturn;
+                }
+            }
+
+            // convert to geometric means
+            for (var sim = 0; sim < Context.Simulations; sim++)
+            {
+                SimulationGeometricReturns[ sim ] = Math.Pow( 
+                    SimulationGeometricReturns[ sim ] / Context.Investments,
+                    1.0 / Context.Years ) - 1;
+            }
+
+            Console.WriteLine("done.");
         }
     }
 }

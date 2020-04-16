@@ -58,7 +58,7 @@ namespace J4JSoftware.InvestmentSimulator
                 IncludeSource = false
             };
 
-            config.Channels.Add(new ConsoleChannel() { MinimumLevel = LogEventLevel.Information });
+            config.Channels.Add(new ConsoleChannel() { MinimumLevel = LogEventLevel.Warning });
             config.Channels.Add(new FileChannel() { MinimumLevel = LogEventLevel.Verbose });
 
             builder.AddJ4JLogging( config );
@@ -127,6 +127,9 @@ namespace J4JSoftware.InvestmentSimulator
             workbook.AddWorksheet("data");
             OutputDataToExcel( workbook.ActiveWorksheet, simulator);
 
+            workbook.AddWorksheet("raw_geometric");
+            OutputSimulationReturnsToExcel(workbook.ActiveWorksheet, simulator);
+
             return workbook.Close();
         }
 
@@ -156,7 +159,7 @@ namespace J4JSoftware.InvestmentSimulator
             var table1 = new ExcelTable(sheet, _services.GetService<IJ4JLoggerFactory>(), TableOrientation.RowHeaders);
 
             table1.AddHeaders("Overall Mean Return", "Overall Standard Deviation");
-            table1.AddEntry(simulator.OverallMeanReturn, simulator.OverallStandardDeviation);
+            table1.AddEntry(simulator.OverallGeometricReturnMean, simulator.OverallGeometricReturnStandardDeviation);
 
             var table2 = new ExcelTable(sheet, _services.GetService<IJ4JLoggerFactory>(), row:3, col: 0);
             table2.AddHeaders("Year", "Mean Portfolio Return", "Portfolio Standard Deviation");
@@ -165,8 +168,8 @@ namespace J4JSoftware.InvestmentSimulator
             {
                 table2.AddEntry( 
                     year, 
-                    simulator.PortfolioReturn[ year ],
-                    simulator.PortfolioStandardDeviation[ year ] );
+                    simulator.PortfolioReturnsByYear[ year ],
+                    simulator.PortfolioStandardDeviationsByYear[ year ] );
             }
         }
 
@@ -182,6 +185,33 @@ namespace J4JSoftware.InvestmentSimulator
             }
 
             table.AutoSize();
+        }
+
+        private static void OutputSimulationReturnsToExcel( ExcelSheet sheet, Simulator simulator )
+        {
+            var table = new ExcelTable(sheet, _services.GetService<IJ4JLoggerFactory>());
+
+            table.AddHeaders("Simulation", "Investment #", "Total Return Factor");
+
+            for( var sim = 0; sim < _context.Simulations; sim++ )
+            {
+                for( var inv = 0; inv < _context.Investments; inv++ )
+                {
+                    table.AddEntry( sim, inv, simulator.RawGeometricReturns[ sim, inv ] );
+                }
+            }
+
+            sheet.Move( 2, 0 );
+
+            var table2 = new ExcelTable(sheet, _services.GetService<IJ4JLoggerFactory>());
+
+            table2.AddHeaders("Simulation", "Geometric Mean Return");
+
+            for (var sim = 0; sim < _context.Simulations; sim++)
+            {
+                table2.AddEntry(sim, simulator.SimulationGeometricReturns[sim]);
+            }
+
         }
     }
 }

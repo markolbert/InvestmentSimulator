@@ -1,7 +1,8 @@
 {
   "profiles": {
     "InvestmentSimulator": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-h"
     }
   }
 }

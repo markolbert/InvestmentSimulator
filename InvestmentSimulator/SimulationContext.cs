@@ -1,13 +1,14 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.CommandLine;
-using System.CommandLine.Binding;
-using System.CommandLine.Invocation;
+using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
 using J4JSoftware.Logging;
+using ObjectBinder;
 
 namespace J4JSoftware.InvestmentSimulator
 {
-    public class SimulationContext
+    public class SimulationContext : ObjectBindingModel
     {
         private readonly IJ4JLogger _logger;
 
@@ -21,6 +22,8 @@ namespace J4JSoftware.InvestmentSimulator
         {
             _logger = loggerFactory?.CreateLogger( typeof(SimulationContext) ) ??
                       throw new NullReferenceException( nameof(loggerFactory) );
+
+            Betas = new BetaDistribution( loggerFactory );
         }
 
         public int Years
@@ -88,79 +91,44 @@ namespace J4JSoftware.InvestmentSimulator
             }
         }
 
+        public BetaDistribution Betas { get; }
+
         public bool Initialize( string[] args )
         {
-            var rootCommand = new RootCommand( "Investment Simulator" );
+            var rootBinder = new ObjectBinder<SimulationContext>( new RootCommand( "Investment Simulator" ), this );
 
-            var years = new Option<int>( new[] { "-y", "--years" }, () => 10, "years to simulate" );
-            years.AddValidator( ( r ) =>
-                r.GetValueOrDefault<int>() >= 1
-                    ? null
-                    : $"'years' must be >= 1 (default is {r.Option.GetDefaultValue()})" );
-            rootCommand.AddOption( years );
+            rootBinder.AddOption( sc => sc.Years, "-y", "--years" )
+                .Description( "years to simulate" )
+                .DefaultValue( 10 )
+                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
 
-            var investments = new Option<int>( new[] { "-i", "--investments" }, () => 5, "investments to simulate" );
-            investments.AddValidator( ( r ) =>
-                r.GetValueOrDefault<int>() >= 1
-                    ? null
-                    : $"'investments' must be >= 1 (default is {r.Option.GetDefaultValue()})" );
-            rootCommand.AddOption( investments );
+            rootBinder.AddOption( sc => sc.Investments, "-i", "--investments" )
+                .Description( "investments to simulate" )
+                .DefaultValue( 5 )
+                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
 
-            var simulations = new Option<int>( new[] { "-s", "--simulations" }, () => 10, "simulations to run" );
-            simulations.AddValidator( ( r ) =>
-                r.GetValueOrDefault<int>() >= 1
-                    ? null
-                    : $"'simulations' must be >= 1 (default is {r.Option.GetDefaultValue()})" );
-            rootCommand.AddOption( simulations );
+            rootBinder.AddOption( sc => sc.Simulations, "-s", "--simulations" )
+                .Description( "simulations to run" )
+                .DefaultValue( 10 )
+                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
 
-            var maxReturn = new Option<double>( new[] { "-r", "--maxReturn" }, () => 0.20,
-                "max annual rate of return for an investment" );
-            maxReturn.AddValidator( ( r ) =>
-                r.GetValueOrDefault<double>() > 0.0
-                    ? null
-                    : $"'maxReturn' must be > 0 (default is {r.Option.GetDefaultValue()})" );
-            rootCommand.AddOption( maxReturn );
+            rootBinder.AddOption( sc => sc.MaxAnnualInvestmentReturn, "-r", "--maxReturn" )
+                .Description( "maximum annual rate of return for an investment" )
+                .DefaultValue( 0.2 )
+                .Validator( OptionInRange<double>.GreaterThan( 0.0 ) );
 
-            var maxStdDev = new Option<double>( new[] { "-d", "--maxStdDev" }, () => 0.20,
-                "max standard deviation in the annual rate of return" );
-            maxStdDev.AddValidator( ( r ) =>
-                r.GetValueOrDefault<double>() > 0.0
-                    ? null
-                    : $"'maxStdDev' must be > 0 (default is {r.Option.GetDefaultValue()})" );
-            rootCommand.AddOption( maxStdDev );
+            rootBinder.AddOption( sc => sc.MaxStdDevAnnualInvestmentReturn, "-d", "--maxStdDev" )
+                .Description( "maximum standard deviation in the annual rate of return" )
+                .DefaultValue( 0.2 )
+                .Validator( OptionInRange<double>.GreaterThan( 0.0 ) );
 
-            rootCommand.Handler = new ObjectBinder<SimulationContext>( this );
+            var builder = new CommandLineBuilder()
+                .UseDefaults()
+                .UseObjectBinder( rootBinder );
 
-            rootCommand.UseObjectBinding( ( cmdOptions, cmdArgs ) =>
-            {
-                var retVal = new ModelBinder<SimulationContext>();
+            Parse( builder, args );
 
-                retVal.BindMemberFromValue( sc =>
-                        sc.Investments,
-                    cmdOptions.FindFirstMatch( "i" ) );
-
-                retVal.BindMemberFromValue( sc =>
-                        sc.MaxAnnualInvestmentReturn,
-                    cmdOptions.FindFirstMatch( "r" ) );
-
-                retVal.BindMemberFromValue( sc =>
-                        sc.MaxStdDevAnnualInvestmentReturn,
-                    cmdOptions.FindFirstMatch( "d" ) );
-
-                retVal.BindMemberFromValue( sc =>
-                        sc.Simulations,
-                    cmdOptions.FindFirstMatch( "s" ) );
-
-                retVal.BindMemberFromValue( sc =>
-                        sc.Years,
-                    cmdOptions.FindFirstMatch( "y" ) );
-
-                return retVal;
-            } );
-
-            var invocationResult = rootCommand.Invoke( args );
-
-            return invocationResult == 0;
+            return !HelpRequested;
         }
     }
 }

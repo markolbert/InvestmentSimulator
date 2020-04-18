@@ -126,7 +126,7 @@ namespace J4JSoftware.InvestmentSimulator
                 .UseDefaults()
                 .UseObjectBinder( rootBinder );
 
-            Parse( builder, args );
+            Parse( builder, args, rootBinder );
 
             return !HelpRequested;
         }

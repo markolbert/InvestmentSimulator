@@ -122,11 +122,7 @@ namespace J4JSoftware.InvestmentSimulator
                 .DefaultValue( 0.2 )
                 .Validator( OptionInRange<double>.GreaterThan( 0.0 ) );
 
-            var builder = new CommandLineBuilder()
-                .UseDefaults()
-                .UseObjectBinder( rootBinder );
-
-            Parse( builder, args, rootBinder );
+            Parse( rootBinder, args );
 
             return !HelpRequested;
         }

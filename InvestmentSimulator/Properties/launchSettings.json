@@ -2,7 +2,7 @@
   "profiles": {
     "InvestmentSimulator": {
       "commandName": "Project",
-      "commandLineArgs": "-h"
+      "commandLineArgs": "-s 100 -i 20"
     }
   }
 }

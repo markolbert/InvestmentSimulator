@@ -1,11 +1,11 @@
 ﻿using System;
+using J4JSoftware.CommandLine;
 using J4JSoftware.Logging;
 using MathNet.Numerics.Distributions;
-using ObjectBinder;
 
 namespace J4JSoftware.InvestmentSimulator
 {
-    public class BetaDistribution : ObjectBindingModel
+    public class BetaDistribution : ObjectModel
     {
         private readonly IJ4JLogger _logger;
 

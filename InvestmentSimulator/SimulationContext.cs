@@ -3,12 +3,12 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Builder;
 using System.CommandLine.Parsing;
+using J4JSoftware.CommandLine;
 using J4JSoftware.Logging;
-using ObjectBinder;
 
 namespace J4JSoftware.InvestmentSimulator
 {
-    public class SimulationContext : RootObjectBindingModel
+    public class SimulationContext : RootObjectModel
     {
         private readonly IJ4JLogger _logger;
 

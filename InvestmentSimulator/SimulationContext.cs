@@ -8,123 +8,58 @@ using ObjectBinder;
 
 namespace J4JSoftware.InvestmentSimulator
 {
-    public class SimulationContext : ObjectBindingModel
+    public class SimulationContext : RootObjectBindingModel
     {
         private readonly IJ4JLogger _logger;
 
-        private int _years = 1;
-        private int _investments = 1;
-        private int _simulations = 1;
-        private double _maxReturn = 0.2;
-        private double _maxStdDevReturn = 0.2;
-
         public SimulationContext( IJ4JLoggerFactory loggerFactory )
+            : base("Investment Simulator")
         {
             _logger = loggerFactory?.CreateLogger( typeof(SimulationContext) ) ??
                       throw new NullReferenceException( nameof(loggerFactory) );
 
-            Betas = new BetaDistribution( loggerFactory );
+            Betas = new BetaDistribution( this, loggerFactory );
+
+            ChildModels.Add( Betas );
         }
 
-        public int Years
-        {
-            get => _years;
-
-            set
-            {
-                if( value <= 0 )
-                    _logger.Error( $"{nameof(Years)} must be >= 1" );
-
-                _years = value;
-            }
-        }
-
-        public int Investments
-        {
-            get => _investments;
-
-            set
-            {
-                if( value <= 0 )
-                    _logger.Error( $"{nameof( Investments )} must be >= 1" );
-
-                _investments = value;
-            }
-        }
-
-        public int Simulations
-        {
-            get => _simulations;
-
-            set
-            {
-                if( value <= 0 )
-                    _logger.Error( $"{nameof( Simulations )} must be >= 1" );
-
-                _simulations = value;
-            }
-        }
-
-        public double MaxAnnualInvestmentReturn
-        {
-            get => _maxReturn;
-
-            set
-            {
-                if( value <= 0 )
-                    _logger.Error( $"{nameof( MaxAnnualInvestmentReturn )} must be > 0" );
-
-                _maxReturn = value;
-            }
-        }
-
-        public double MaxStdDevAnnualInvestmentReturn
-        {
-            get => _maxStdDevReturn;
-
-            set
-            {
-                if( value <= 0 )
-                    _logger.Error( $"{nameof( MaxStdDevAnnualInvestmentReturn )} must be > 0" );
-
-                _maxStdDevReturn = value;
-            }
-        }
-
+        public int Years { get; set; }
+        public int Investments { get; set; }
+        public int Simulations { get; set; }
+        public double MeanMarketReturn { get; set; }
+        public double StdDevMarketReturn { get; set; }
         public BetaDistribution Betas { get; }
 
-        public bool Initialize( string[] args )
+        protected override void DefineBindings( IObjectBinder objBinder )
         {
-            var rootBinder = new ObjectBinder<SimulationContext>( new RootCommand( "Investment Simulator" ), this );
+            base.DefineBindings( objBinder );
 
-            rootBinder.AddOption( sc => sc.Years, "-y", "--years" )
-                .Description( "years to simulate" )
-                .DefaultValue( 10 )
-                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
+            var binder = (ObjectBinder<SimulationContext>) objBinder;
 
-            rootBinder.AddOption( sc => sc.Investments, "-i", "--investments" )
-                .Description( "investments to simulate" )
-                .DefaultValue( 5 )
-                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
+            binder.AddOption(sc => sc.Years, "-y", "--years")
+                .Description("years to simulate")
+                .DefaultValue(10)
+                .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            rootBinder.AddOption( sc => sc.Simulations, "-s", "--simulations" )
-                .Description( "simulations to run" )
-                .DefaultValue( 10 )
-                .Validator( OptionInRange<int>.GreaterThanEqual( 1 ) );
+            binder.AddOption(sc => sc.Investments, "-i", "--investments")
+                .Description("investments to simulate")
+                .DefaultValue(5)
+                .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            rootBinder.AddOption( sc => sc.MaxAnnualInvestmentReturn, "-r", "--maxReturn" )
-                .Description( "maximum annual rate of return for an investment" )
-                .DefaultValue( 0.2 )
-                .Validator( OptionInRange<double>.GreaterThan( 0.0 ) );
+            binder.AddOption(sc => sc.Simulations, "-s", "--simulations")
+                .Description("simulations to run")
+                .DefaultValue(10)
+                .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            rootBinder.AddOption( sc => sc.MaxStdDevAnnualInvestmentReturn, "-d", "--maxStdDev" )
-                .Description( "maximum standard deviation in the annual rate of return" )
-                .DefaultValue( 0.2 )
-                .Validator( OptionInRange<double>.GreaterThan( 0.0 ) );
+            binder.AddOption(sc => sc.MeanMarketReturn, "-r", "--meanReturn")
+                .Description("mean annual rate of return for the total market")
+                .DefaultValue(0.1)
+                .Validator(OptionInRange<double>.GreaterThan(0.0));
 
-            Parse( rootBinder, args );
-
-            return !HelpRequested;
+            binder.AddOption(sc => sc.StdDevMarketReturn, "-d", "--stdDevReturn")
+                .Description("standard deviation of total market annual rate of return")
+                .DefaultValue(0.2)
+                .Validator(OptionInRange<double>.GreaterThan(0.0));
         }
     }
 }

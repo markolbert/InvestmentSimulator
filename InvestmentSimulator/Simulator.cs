@@ -60,8 +60,8 @@ namespace J4JSoftware.InvestmentSimulator
             for( var inv = 0; inv < Context.Investments; inv++ )
             {
                 InverseInvestmentGaussians[ inv ] = new InverseGaussian(
-                    Context.MaxAnnualInvestmentReturn * random.NextDouble(),
-                    Context.MaxStdDevAnnualInvestmentReturn * random.NextDouble()
+                    Context.MeanMarketReturn * random.NextDouble(),
+                    Context.StdDevMarketReturn * random.NextDouble()
                 );
             }
 

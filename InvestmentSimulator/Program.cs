@@ -102,9 +102,9 @@ namespace J4JSoftware.InvestmentSimulator
                         new Cell( "Time Span, Years" ) { Stroke = _hdrThickness, Align = Align.Left },
                         new Cell( $"{_context.Years:n0}" ) { Stroke = _hdrThickness, Align = Align.Right },
                         new Cell( "Maximum Annual Rate of Return" ) { Stroke = _hdrThickness, Align = Align.Left },
-                        new Cell( $"{_context.MaxAnnualInvestmentReturn*100:n1}%" ) { Stroke = _hdrThickness, Align = Align.Right },
+                        new Cell( $"{_context.MeanMarketReturn*100:n1}%" ) { Stroke = _hdrThickness, Align = Align.Right },
                         new Cell( "Maximum Standard Deviation in Rate of Return" ) { Stroke = _hdrThickness, Align = Align.Left },
-                        new Cell( $"{_context.MaxStdDevAnnualInvestmentReturn*100:n1}%" ) { Stroke = _hdrThickness, Align = Align.Right },
+                        new Cell( $"{_context.StdDevMarketReturn*100:n1}%" ) { Stroke = _hdrThickness, Align = Align.Right },
                     }
                 } );
 
@@ -141,7 +141,7 @@ namespace J4JSoftware.InvestmentSimulator
                 "Maximum Annual Rate of Return", "Maximum Standard Deviation in Rate of Return" );
 
             table.AddEntry( _context.Simulations, _context.Investments, _context.Years,
-                _context.MaxAnnualInvestmentReturn, _context.MaxStdDevAnnualInvestmentReturn );
+                _context.MeanMarketReturn, _context.StdDevMarketReturn );
 
             var table2 = new ExcelTable(sheet, _services.GetService<IJ4JLoggerFactory>(), row: 7, col: 0);
             table2.AddHeaders("Investment #", "Inverse Gaussian Mean", "Inverse Gaussian Std Dev");

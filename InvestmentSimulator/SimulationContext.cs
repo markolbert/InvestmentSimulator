@@ -8,6 +8,11 @@ using J4JSoftware.Logging;
 
 namespace J4JSoftware.InvestmentSimulator
 {
+    public class TestClass
+    {
+        public int Value { get; set; }
+    }
+
     public class SimulationContext : RootObjectModel
     {
         private readonly IJ4JLogger _logger;
@@ -23,6 +28,7 @@ namespace J4JSoftware.InvestmentSimulator
             ChildModels.Add( Betas );
         }
 
+        public TestClass Test { get; set; } = new TestClass();
         public int Years { get; set; }
         public int Investments { get; set; }
         public int Simulations { get; set; }
@@ -35,6 +41,11 @@ namespace J4JSoftware.InvestmentSimulator
             base.DefineBindings( objBinder );
 
             var binder = (ObjectBinder<SimulationContext>) objBinder;
+
+            binder.AddOption(sc => sc.Test.Value, "-t")
+                .Description("test property")
+                .DefaultValue(10)
+                .Validator(OptionInRange<int>.GreaterThanEqual(0));
 
             binder.AddOption(sc => sc.Years, "-y")
                 .Description("years to simulate")

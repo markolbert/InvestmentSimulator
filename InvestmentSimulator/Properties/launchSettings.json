@@ -2,7 +2,7 @@
   "profiles": {
     "InvestmentSimulator": {
       "commandName": "Project",
-      "commandLineArgs": "-y 50 -r 0.3 -d 0.5 beta -b 1 -a 1 -m -0.2 -x 0.3"
+      "commandLineArgs": "-t 5 -y 50 -r 0.3 -d 0.5 beta -b 1 -a 1 -m -0.2 -x 0.3"
     }
   }
 }

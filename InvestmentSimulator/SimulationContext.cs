@@ -36,27 +36,27 @@ namespace J4JSoftware.InvestmentSimulator
 
             var binder = (ObjectBinder<SimulationContext>) objBinder;
 
-            binder.AddOption(sc => sc.Years, "-y", "--years")
+            binder.AddOption(sc => sc.Years, "-y")
                 .Description("years to simulate")
                 .DefaultValue(10)
                 .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            binder.AddOption(sc => sc.Investments, "-i", "--investments")
+            binder.AddOption(sc => sc.Investments, "-i")
                 .Description("investments to simulate")
                 .DefaultValue(5)
                 .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            binder.AddOption(sc => sc.Simulations, "-s", "--simulations")
+            binder.AddOption(sc => sc.Simulations, "-s")
                 .Description("simulations to run")
                 .DefaultValue(10)
                 .Validator(OptionInRange<int>.GreaterThanEqual(1));
 
-            binder.AddOption(sc => sc.MeanMarketReturn, "-r", "--meanReturn")
+            binder.AddOption(sc => sc.MeanMarketReturn, "-r")
                 .Description("mean annual rate of return for the total market")
                 .DefaultValue(0.1)
                 .Validator(OptionInRange<double>.GreaterThan(0.0));
 
-            binder.AddOption(sc => sc.StdDevMarketReturn, "-d", "--stdDevReturn")
+            binder.AddOption(sc => sc.StdDevMarketReturn, "-d")
                 .Description("standard deviation of total market annual rate of return")
                 .DefaultValue(0.2)
                 .Validator(OptionInRange<double>.GreaterThan(0.0));

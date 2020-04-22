@@ -19,9 +19,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\command-line-api\ObjectBinder\ObjectBinder.csproj" />
-    <ProjectReference Include="..\..\command-line-api\OptionExtras\OptionExtras.csproj" />
     <ProjectReference Include="..\..\command-line-api\src\System.CommandLine\System.CommandLine.csproj" />
+    <ProjectReference Include="..\..\J4JCommandLine\ObjectBinder\ObjectBinder.csproj" />
+    <ProjectReference Include="..\..\J4JCommandLine\OptionExtras\OptionExtras.csproj" />
     <ProjectReference Include="..\..\J4JLogging\AutoFacJ4JLogging\AutoFacJ4JLogging.csproj" />
     <ProjectReference Include="..\..\J4JLogging\ConsoleChannel\ConsoleChannel.csproj" />
     <ProjectReference Include="..\..\J4JLogging\FileChannel\FileChannel.csproj" />
